@@ -1,6 +1,6 @@
 username = LAPTOP-NVE92HJG\Hp
 password =
-email  = danghuuquy10042003@gmail.com
-name_db = dw
-driver_name = SQL SEVER
+email = danghuuquy10042003@gmail.com
+name_db = datawarehouse_1
+driver_name = ODBC Driver 17 for SQL Server
 server_name = LAPTOP-NVE92HJG\MSSQLSERVER01

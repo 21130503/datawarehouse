@@ -1,24 +1,29 @@
 import asyncio
 from connect import Connect
+from crawl import connection
+from writeLog import writeLog
 
 
 async def main():
     # 1. Connect to the database
     connect = Connect()
 
-    # 2. Get the database connection
+    # 2. Access File Config
     connection = await connect.connectODBC()
     if connection:
         cursor = connection.cursor()
-        cursor.execute('select LocationFile from ConfigFile')
+        cursor.execute('select Id,LocationFile from ConfigFile')
         result = cursor.fetchall()
-        location_files = [row[0] for row in result]
+        # 3. get Fied
+        location_files = [row[1] for row in result]
+        Id = [row[0] for row in result]
         try:
             cursor.execute("EXEC ImportAccidentDalyData @path = ?", (location_files[0],))
             connection.commit()  # Commit the transaction if needed
-            print("Data imported successfully.")
+            await writeLog(Id[0], "ER","Load Staging Successfully")
         except Exception as error:
-            print(f"Error calling stored procedure: {error}")
+            await writeLog(Id[0], "ERR","Load Staging Failure")
+
         finally:
             connection.close()  # Close the connection after use
 

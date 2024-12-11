@@ -1,15 +1,15 @@
 import requests
 from bs4 import BeautifulSoup
 import time
-
+import csv
 from model import Model
-
+from datetime import datetime
 from connect import  Connect
 # 1.connect db
 connection = None
 sourceFile = []
 locationFile = []
-
+model = Model()
 # Hàm kết nối cơ sở dữ liệu
 async def connect():
     global connection
@@ -41,10 +41,22 @@ def craw_data(sources, locations):
         location = locations[i]
         base_url = "https://www.baogiaothong.vn"
 
+        # Bước 1: Xóa dữ liệu cũ và ghi header trước khi cào
+        try:
+            with open(location, "w", newline="", encoding="utf-8") as file:
+                # Tạo header từ model.extract_information, không có 'Id'
+                sample_dict = model.extract_information("")
+                fieldnames = ["Id"] + list(sample_dict.keys())  # Đưa Id lên đầu
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
+                writer.writeheader()  # Ghi dòng tiêu đề
+                print(f"Đã xóa dữ liệu cũ và tạo header cho file: {location}")
+        except Exception as error:
+            print(f"Lỗi khi xóa dữ liệu cũ: {error}")
+            continue
+
+        # Cào dữ liệu
         response = requests.get(source)
         response.encoding = 'utf-8'
-        resps = []
-        # Kiểm tra nếu request thành công
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, "html.parser")
             article_links = []
@@ -57,8 +69,8 @@ def craw_data(sources, locations):
                     article_links.append(full_link)
             filtered_urls = [url for url in article_links if "https://atgt.baogiaothong.vn/" not in url]
 
-            # print(filtered_urls)
-            for link in filtered_urls:
+            # Duyệt qua các liên kết bài viết và ghi dữ liệu
+            for index, link in enumerate(filtered_urls, start=1):  # Dùng index cho Id
                 time.sleep(1)
 
                 response = requests.get(link)
@@ -67,16 +79,22 @@ def craw_data(sources, locations):
                     detail_cmain = soup.find("div", class_="detail__cnt-top")
                     if detail_cmain:
                         content = detail_cmain.get_text(strip=True)
-                        print(f"Nội dung bài báo tại {link}:\n{content}\n")
-                        # resp = model.respone(content)
-                        # resps.append(resp)
-                        print(content)
-                    else:
+                        dict = model.extract_information(content)
+                        dict["CreatedAt"] = datetime.now().strftime("%Y-%m-%d")
+                        dict["Id"] = index  # Gán Id cho mỗi bài viết
 
+                        file_path = locationFile[i]
+                        try:
+                            with open(file_path, mode='a', newline='', encoding='utf-8') as file:
+                                writer = csv.DictWriter(file, fieldnames=fieldnames)
+                                writer.writerow(dict)  # Ghi dữ liệu vào file
+                                print(f"Write oke for Id {index}")
+                        except Exception as error:
+                            print(f"Error writing: {error}")
+                    else:
                         print(f"Không tìm thấy nội dung bài báo tại {link}")
                 else:
                     print(f"Không thể truy cập bài báo tại {link}, mã trạng thái HTTP: {response.status_code}")
-
         else:
             print(f"Không thể truy cập trang, mã trạng thái HTTP: {response.status_code}")
 

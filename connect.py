@@ -3,8 +3,6 @@ from databases import Database
 import asyncio
 import pypyodbc as odbc
 from sendMail import SendMail
-
-
 class Connect:
 
     def getAttr(self, fileName):
@@ -23,6 +21,7 @@ class Connect:
         return username, password, email, name_db, driver_name, server_name
 
     async def connectODBC(self):
+
         username, password, email, name_db, driver_name, server_name = self.getAttr('config')
 
         # Constructing the ODBC connection string
@@ -30,7 +29,16 @@ class Connect:
 
         try:
             connection = odbc.connect(connectionString)
+
             print("Connected Successfully")
+            cursor = connection.cursor()
+            try:
+                cursor.execute(f"exec writeLog {1000}, 'ER', 'Connect database successfully'")
+                connection.commit()
+                print("Log written successfully")
+            except Exception as cursor_error:
+                print(f"Error writing log: {cursor_error}")
+                raise
             return connection
         except Exception as error:
             print(f"Error connecting to the database: {error}")

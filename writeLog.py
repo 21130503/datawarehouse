@@ -12,9 +12,8 @@ async  def writeLog(idConfig,status, content):
         try:
             cursor.execute(f"exec writeLog {idConfig}, '{status}', '{content}'")
             connection.commit()
-            send_mail.sendMail("Thành công", 'Load to staging oke')
+            send_mail.sendMail(f"{status}-Load To Staging", content)
         except Exception as e:
             print(f"Lỗi xảy ra: {e}" )
-            send_mail.sendMail("Thất bại", "Load to staging failure")
         finally:
             connection.close()

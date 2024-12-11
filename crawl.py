@@ -93,6 +93,7 @@ def craw_data(sources, locations):
                             print(f"Error writing: {error}")
                     else:
                         print(f"Không tìm thấy nội dung bài báo tại {link}")
+
                 else:
                     print(f"Không thể truy cập bài báo tại {link}, mã trạng thái HTTP: {response.status_code}")
         else:
